@@ -1,4 +1,4 @@
-# Running open LLMs on OSC with Ollama: a beginner's guide
+# Running open LLMs on OSC with Ollama
 
 This guide shows how to run open-source large language models (Llama, Qwen, Gemma,
 gpt-oss, ...) on the Ohio Supercomputer Center (OSC) GPUs with **Ollama**. You can
