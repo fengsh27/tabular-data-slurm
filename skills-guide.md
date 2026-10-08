@@ -55,14 +55,25 @@ Full details, including the two environment variables that control where files a
 
 ## 2. One-time setup
 
-1. **Install Claude Code.** It's a Node.js CLI:
+1. **Install Claude Code** with its official installer. It installs into your home directory
+   (`~/.local/bin/claude`), so it needs no admin rights, and every node sees it because home
+   directories are shared:
 
    ```bash
-   # OSC's login node usually has node; if `node -v` fails, load a module first,
-   # e.g. `module load node` (name varies by cluster — `module spider node`).
-   npm install -g @anthropic-ai/claude-code
+   curl -fsSL https://claude.ai/install.sh | bash
    claude --version
    ```
+
+   If `claude --version` says `command not found`, add `~/.local/bin` to your `PATH` and try
+   again (this makes it permanent, including inside batch jobs):
+
+   ```bash
+   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+   (Don't use `npm install -g @anthropic-ai/claude-code` here: on OSC it tries to write to
+   the system folder `/usr/local` and fails with a permission error.)
 
 2. **Have an Ollama container and a pulled model ready.** Either OSC's `module load
    ollama/<version>` ([README.md](README.md) §1) or your own pinned container
