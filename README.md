@@ -12,6 +12,9 @@ experience with Ollama, Slurm or containers.
 | `README.md` (this file) | Start here. Concepts, then three ways to run Ollama step by step |
 | `osc_tabular_job_template.sh` | A batch job script you can copy and edit (option C) |
 | `ollama-guide.md` | Advanced notes: pinning versions, reproducible output, known model bugs |
+| `skills-guide.md` | Curate PK/PE data from papers with **Claude Code + a skill**, on an OSC GPU, via Slurm |
+| `skills/` | The PK/PE curation skill bundle itself — copy into any project's `.claude/skills/` |
+| `osc_skills_job_template.sh` | A batch job script for running a curation skill (see `skills-guide.md`) |
 
 ---
 
@@ -341,3 +344,7 @@ you run long or important workloads. It covers:
 - making outputs fully reproducible,
 - a known crash with Qwen3.6 on newer Ollama versions, and
 - connecting Claude Code to a local model.
+
+**Want to do real work with a local model, not just chat?** `skills-guide.md` shows how to run
+**Claude Code skills** — structured, reusable procedures, not just prompts — against your Ollama
+server to curate structured data (PK/PE tables) out of research papers, as a Slurm batch job.
