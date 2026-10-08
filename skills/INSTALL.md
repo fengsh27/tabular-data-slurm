@@ -52,7 +52,9 @@ set either, both, or neither.
 
 ## Dependencies
 Pipelines that convert HTML tables or prepare papers need BeautifulSoup:
-`pip install -r <skill>/scripts/requirements.txt` (provides `beautifulsoup4`).
+`pip install -r <skill>/scripts/requirements.txt` (provides `beautifulsoup4`), or create
+the conda environment from the repo's top-level `environment.yml`
+(`conda env create -f environment.yml`, then `conda activate pkpe-skills`).
 `verify_provenance.py` and the `clean_*_rows.py` cleanup scripts are Python-3
 stdlib only.
 

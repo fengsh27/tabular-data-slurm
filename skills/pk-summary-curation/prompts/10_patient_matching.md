@@ -1,7 +1,7 @@
 # Stage 10 — Patient matching
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
-**Only run this prompt if the shortcut in procedure.md does not apply** (i.e. the
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
+**Only run this prompt if the shortcut in SKILL.md does not apply** (i.e. the
 refined patient table has more than one row). With a single cohort, assign it
 to every row directly without reasoning.
 
@@ -58,5 +58,5 @@ Stage 13 (assembly) reads that file.
 
 ## Note on the shortcut
 For `16143486_table_4` the refined patient table has a **single** cohort
-(`Maternal | Delivery | N/A | 8`), so the procedure.md shortcut applies: assign
+(`Maternal | Delivery | N/A | 8`), so the SKILL.md shortcut applies: assign
 that cohort to every row without running this matching prompt.

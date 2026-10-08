@@ -1,7 +1,7 @@
 # Stage 09 — Drug matching
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
-**Only run this prompt if the shortcut in procedure.md does not apply** (i.e. the
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
+**Only run this prompt if the shortcut in SKILL.md does not apply** (i.e. the
 drug table has more than one row). With a single drug combination, assign it to
 every row directly without reasoning.
 

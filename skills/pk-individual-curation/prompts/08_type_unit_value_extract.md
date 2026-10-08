@@ -1,6 +1,6 @@
 # Stage 08 — Parameter type + unit + value extraction
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
 
 ## What you are doing
 For each row of each sub-table, turn the raw `Parameter type` (a column header

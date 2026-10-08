@@ -1,6 +1,6 @@
 # Stage 01 — Drug / Analyte / Specimen extraction
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are extracting
 The set of unique **[Drug name, Analyte, Specimen]** combinations described by

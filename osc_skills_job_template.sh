@@ -10,12 +10,15 @@
 #
 # How to use:
 #   1. Change --account below to YOUR project code (e.g. PAS1234).
-#   2. Set PAPER / PMID / SKILL below (or override at submit time, see below).
-#   3. Submit:   sbatch osc_skills_job_template.sh
+#   2. Name each paper file after its PMID (e.g. 12345678.html). The prepare
+#      step names its output folder after the file name, so the file name IS
+#      the PMID this job uses.
+#   3. Set PAPER / SKILL / MY_OLLAMA_MODELS below (or override at submit time).
+#   4. Submit:   sbatch osc_skills_job_template.sh
 #      Or override settings at submit time, e.g.:
-#                sbatch --export=ALL,PAPER=myother.html,PMID=87654321,SKILL=pk-summary-curation \
+#                sbatch --export=ALL,PAPER=87654321.html,SKILL=pk-summary-curation \
 #                       osc_skills_job_template.sh
-#   4. Check progress:  squeue -u $USER
+#   5. Check progress:  squeue -u $USER
 #      Read output:     cat skills-job-<jobid>.out
 #      (the server's own log is in ollama-server-<jobid>.log, useful if something fails)
 #
@@ -35,18 +38,47 @@
 set -u
 
 # === 1. Settings you may change ==============================================
-PAPER=${PAPER:-paper.html}                      # the raw paper file to curate (.html or .xml)
-PMID=${PMID:-00000000}                          # an identifier for this paper (any string)
+PAPER=${PAPER:-12345678.html}                   # the raw paper file (.html or .xml), named <pmid>.html/.xml
+PMID=$(basename "${PAPER%.*}")                  # derived from the file name; don't set it separately
 SKILL=${SKILL:-pk-individual-curation}           # which curation skill to run (see skills-guide.md §1)
 MODEL=${MODEL:-qwen3.8:27b}                     # must NOT be qwen3.6 unless you switch to a
                                                  # pre-regression container (see ollama-guide.md §6)
 CONTEXT_LENGTH=${CONTEXT_LENGTH:-131072}         # keep CLAUDE_CODE_MAX_CONTEXT_TOKENS equal to this
 MAX_OUTPUT_TOKENS=${MAX_OUTPUT_TOKENS:-32000}
 
-# Where models are stored. Leave unset to use OSC's shared, read-only folder.
-# To use models you downloaded yourself, point it at your own folder, e.g.:
-# export MY_OLLAMA_MODELS=/fs/ess/PAS1234/ollama/models
-MY_OLLAMA_MODELS=${MY_OLLAMA_MODELS:-}
+# Where models are stored. OSC's shared folder (used when this is empty) does NOT
+# have qwen3.8 or the other models recommended for these skills, so point this at
+# your own folder and pull the model into it once first (README.md section 6):
+MY_OLLAMA_MODELS=${MY_OLLAMA_MODELS:-}          # e.g. /fs/ess/PAS1234/ollama/models
+
+# Python environment for the skills' helper scripts, created once from this
+# repo's environment.yml (skills-guide.md section 2). Set to empty if you
+# pip-installed beautifulsoup4 into your user Python instead.
+CONDA_ENV=${CONDA_ENV-pkpe-skills}
+
+# --- Pre-flight checks: fail in seconds, before starting the server -----------
+if [ ! -f "$PAPER" ]; then
+    echo "[ERROR] Paper file not found: $PAPER (looked in $PWD)"; exit 1
+fi
+if [ -n "$CONDA_ENV" ]; then
+    module load miniconda3/24.1.2-py310
+    eval "$(conda shell.bash hook)"
+    conda activate "$CONDA_ENV" || {
+        echo "[ERROR] Could not activate conda environment '$CONDA_ENV'. Create it once with:"
+        echo "        module load miniconda3/24.1.2-py310 && conda env create -f environment.yml"
+        exit 1
+    }
+fi
+# The skills call "python", so check that one
+if ! python -c "import bs4" 2>/dev/null; then
+    echo "[ERROR] Python package beautifulsoup4 is missing for $(command -v python)."
+    echo "        Create the conda environment (environment.yml) or run:"
+    echo "        pip install --user -r .claude/skills/pk-pe-prepare/scripts/requirements.txt"
+    exit 1
+fi
+if ! command -v claude > /dev/null; then
+    echo "[ERROR] Claude Code ('claude') is not on PATH. See skills-guide.md section 2."; exit 1
+fi
 
 # Where this job's own working files go. Keeping scratch and final output apart
 # makes it easy to clean up intermediates without touching results you care about.
@@ -82,6 +114,14 @@ for i in {1..60}; do
 done
 curl -sf "$BASE_URL/api/tags" > /dev/null || { echo "[ERROR] Server never became ready. See $SERVER_LOG"; exit 1; }
 echo "[INFO] Ollama is ready at $BASE_URL"
+
+# Is the model actually in this models folder? (A missing model would otherwise
+# only surface as a confusing Claude Code error later.)
+if ! curl -s "$BASE_URL/api/tags" | python3 -c "import json,sys; names=[m['name'] for m in json.load(sys.stdin)['models']]; sys.exit(0 if '$MODEL' in names else 1)"; then
+    echo "[ERROR] Model $MODEL is not in $OLLAMA_MODELS."
+    echo "        Set MY_OLLAMA_MODELS to the folder you pulled it into (README.md section 6)."
+    exit 1
+fi
 
 # === 3. Point Claude Code at this server ======================================
 export ANTHROPIC_BASE_URL="$BASE_URL"
@@ -132,9 +172,9 @@ echo "[INFO] Done."
 
 # -----------------------------------------------------------------------------
 # To process many papers: submit one job per paper instead of looping in here,
-# e.g. from a CSV of "paper.html,pmid" pairs:
+# e.g. for every paper in a folder:
 #
-#   while IFS=, read -r paper pmid; do
-#     sbatch --export=ALL,PAPER="$paper",PMID="$pmid" osc_skills_job_template.sh
-#   done < papers.csv
+#   for paper in papers/*.html; do      # each file named <pmid>.html
+#     sbatch --export=ALL,PAPER="$paper" osc_skills_job_template.sh
+#   done
 # -----------------------------------------------------------------------------

@@ -15,6 +15,7 @@ experience with Ollama, Slurm or containers.
 | `skills-guide.md` | Curate PK/PE data from papers with **Claude Code + a skill**, on an OSC GPU, via Slurm |
 | `skills/` | The PK/PE curation skill bundle itself — copy into any project's `.claude/skills/` |
 | `osc_skills_job_template.sh` | A batch job script for running a curation skill (see `skills-guide.md`) |
+| `environment.yml` | Conda environment with the curation skills' Python dependencies |
 
 ---
 

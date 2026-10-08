@@ -1,6 +1,6 @@
 # Stage 11 — Parameter value extraction
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are doing
 For each row of each sub-table, decompose the reported value into a fixed set

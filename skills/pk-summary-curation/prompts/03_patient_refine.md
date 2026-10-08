@@ -1,6 +1,6 @@
 # Stage 03 — Patient cohort refinement
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are doing
 Refine the patient table from stage 2 into a more detailed table. You will:

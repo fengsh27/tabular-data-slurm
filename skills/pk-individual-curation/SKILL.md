@@ -3,7 +3,7 @@ name: pk-individual-curation
 description: Curate individual-subject pharmacokinetics (PK) tables (one row per subject per parameter) from a biomedical paper into a normalized 12-column dataset. Use when tables report per-individual PK values; do NOT use for summary/aggregate tables (use pk-summary-curation).
 ---
 
-> **Self-contained skill.** Every `scripts/…` path and every resource file (`verify_and_correct.md`, `refine_population.md`, …) named below lives in **this skill's own directory**. This skill shares nothing with other skills — when run as an installed skill, resolve these paths under this skill's folder.
+> **Self-contained skill.** Every `scripts/…` path and every resource file (`verify_and_correct.md`, `prompts/…`) named below lives in **this skill's own directory**. This skill shares nothing with other skills — when run as an installed skill, resolve these paths under this skill's folder.
 
 > **Working-directory base (read this first).** Every `./.…` path this skill uses below — the prepared inputs in `./.paper_assets/<pmid>/` and any `./.…_scratch/<pmid>/` intermediates this skill writes — is relative to one base directory. Resolve it **once, before any file operation**: if the environment variable `SKILL_SCRATCH_FOLDER` is set (run `echo "$SKILL_SCRATCH_FOLDER"` to check), that is the base — e.g. write to `"$SKILL_SCRATCH_FOLDER"/.<name>_scratch/<pmid>/` and read from `"$SKILL_SCRATCH_FOLDER"/.paper_assets/<pmid>/`. Otherwise the base is the user's current working directory (use the paths exactly as written below). Create directories with `mkdir -p` and keep the same base for every read and write.
 
@@ -70,7 +70,7 @@ would corrupt the exact table text later stages depend on).
 NOT inside this skill's folder.** Concretely, the path is
 `./.pk_individual_scratch/<pmid>/` relative to where the user is working (the
 current working directory), so outputs live alongside the user's data. Never
-write scratch files under `pipelines/pk-individual-curation/` (the skill folder is
+write scratch files inside this skill's own folder (it is
 read-only skill content; writing there pollutes the skill and may be lost or
 shared across unrelated runs). If you are unsure of the working directory, run
 `pwd` and create the scratch folder there.
@@ -283,7 +283,8 @@ After cleanup (stage 13), before verification, check the table:
 - Its verify → correct loop is **bounded** (≤2 rounds); remaining issues are
   reported, not endlessly retried.
 - It does not aggregate or compute statistics — that is pk-summary-curation.
-- It does not score itself against a gold standard — that's `benchmark/`.
+- It does not score itself against a gold standard (accuracy benchmarking is a
+  separate harness, not part of this bundle).
 
 ## Write out the result (do this last)
 When the procedure above finishes, copy its **final deliverable CSV** (the `combined_final.csv` / `NN_final.csv` written by the last stage) to the output location, leaving the scratch copy in place:

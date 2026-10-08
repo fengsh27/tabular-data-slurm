@@ -1,6 +1,6 @@
 # Stage 08 — Parameter type + unit extraction
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are doing
 For each sub-table, turn its `Parameter type` column into a clean pair of

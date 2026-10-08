@@ -10,7 +10,7 @@ file — **HTML** (PMC / Wiley / Elsevier) or **JATS/PMC XML** — into the cano
 input layout every curation skill expects. Format is auto-detected from the file
 extension and root element.
 
-> **Self-contained skill.** Every `scripts/…` path and every resource file (`verify_and_correct.md`, `refine_population.md`, …) named below lives in **this skill's own directory**. This skill shares nothing with other skills — when run as an installed skill, resolve these paths under this skill's folder.
+> **Self-contained skill.** Every `scripts/…` path named below lives in **this skill's own directory**. This skill shares nothing with other skills — when run as an installed skill, resolve these paths under this skill's folder.
 
 > **Working-directory base (read this first).** Every `./.…` path this skill uses below — the prepared inputs in `./.paper_assets/<pmid>/` and any `./.…_scratch/<pmid>/` intermediates this skill writes — is relative to one base directory. Resolve it **once, before any file operation**: if the environment variable `SKILL_SCRATCH_FOLDER` is set (run `echo "$SKILL_SCRATCH_FOLDER"` to check), that is the base — e.g. write to `"$SKILL_SCRATCH_FOLDER"/.<name>_scratch/<pmid>/` and read from `"$SKILL_SCRATCH_FOLDER"/.paper_assets/<pmid>/`. Otherwise the base is the user's current working directory (use the paths exactly as written below). Create directories with `mkdir -p` and keep the same base for every read and write.
 
@@ -45,12 +45,14 @@ stays the source of truth for the curation skills, which re-convert it with the
 same converter (`scripts/html_to_markdown_table.py`), so the two agree.
 
 ## Hand off
-Point the curation skills at the produced `<pmid>/` directory:
-- **table** skills (`pk-summary-curation`, `pk-individual-curation`,
-  `pe-study-outcome`) → `table_<n>.html`;
-- **full-text** skills (`pk-drug-*`, `pk-specimen-*`, `pk-population-*`,
-  `pe-study-info`) → `paper_text.md` (+ `abstract.md`);
-- **routing** (`pk-pe-route`) → `table_<n>.md`.
+Point the curation skills in this bundle at the produced `<pmid>/` directory:
+- `pk-summary-curation` (group-level summary tables) and
+  `pk-individual-curation` (per-subject tables) read `table_<n>.md` /
+  `table_<n>.html`, `manifest.json`, and (individual) `paper_text.md`.
+
+Tell the user the `<pmid>` folder name you produced: it is the input file's base
+name (`12345678.html` → `.paper_assets/12345678/`), and the curation skills must
+be given that same name.
 
 ## Scope & notes
 - **HTML** uses best-effort PMC / Wiley / Elsevier selectors. **XML** uses the

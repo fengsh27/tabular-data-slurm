@@ -1,6 +1,6 @@
 # Stage 07 — Split by columns
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are doing
 Split the aligned table into one or more **sub-tables**, each describing a

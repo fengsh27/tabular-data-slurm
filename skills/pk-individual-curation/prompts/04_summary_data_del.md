@@ -1,6 +1,6 @@
 # Stage 04 — Summary-data deletion
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
 
 ## What you are doing
 Keep only the **individual, per-subject** rows; delete the **summary / aggregate**

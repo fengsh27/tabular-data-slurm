@@ -1,6 +1,6 @@
 # Stage 02 — Patient information
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
 
 ## What you are doing
 Extract the unique patient/subject groupings the table reports, as rows of
@@ -25,7 +25,7 @@ combination of:
    - If, unexpectedly, there is still no `Patient ID` column and no other
      per-subject identifier, do **not** fabricate ids — note that Stage 0c did
      not establish a Patient ID (likely `needs_full_text` in `00c_patient_id.md`)
-     and stop, asking for the full text. See procedure.md's error-handling rules.
+     and stop, asking for the full text. See SKILL.md's error-handling rules.
 2. **Population** — the age/demographic group (adult, neonate, pregnant women,
    …). `"N/A"` if not stated or reasonably inferable.
 3. **Pregnancy stage** — pregnancy-related timing (trimester, delivery,

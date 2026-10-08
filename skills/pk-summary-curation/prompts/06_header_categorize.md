@@ -1,6 +1,6 @@
 # Stage 06 — Header categorization
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are doing
 Classify every column header of the aligned table into one of five categories.

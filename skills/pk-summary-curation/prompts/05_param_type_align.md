@@ -1,6 +1,6 @@
 # Stage 05 — Parameter-type alignment
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are doing
 Reshape the summary table so that **PK parameter types live in a column named

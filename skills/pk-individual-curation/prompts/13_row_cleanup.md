@@ -1,6 +1,6 @@
 # Stage 13 — Row cleanup (deterministic script)
 
-This file is loaded by `procedure.md` after assembly. It applies the individual
+This file is loaded by `SKILL.md` after assembly. It applies the individual
 pipeline's mechanical normalization rules with a **bundled deterministic
 script** — do not apply these rules by hand, the script is the source of truth.
 
@@ -10,7 +10,7 @@ script** — do not apply these rules by hand, the script is the source of truth
 ## Run the cleanup script
 
 ```
-python pipelines/pk-individual-curation/scripts/clean_individual_rows.py \
+python scripts/clean_individual_rows.py \
   <scratch>/12_assembled.csv -o <scratch>/13_final.csv
 ```
 

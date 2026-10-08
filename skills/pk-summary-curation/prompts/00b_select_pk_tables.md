@@ -1,6 +1,6 @@
 # Stage 0b — Select the PK summary tables
 
-This file is loaded by `procedure.md` when the input contains **more than one
+This file is loaded by `SKILL.md` when the input contains **more than one
 table**. Its job is to decide *which* of the input tables are pharmacokinetics
 (PK) tables worth curating, so the rest of the pipeline (stages 1–14) runs only
 on those — once per selected table.
@@ -61,5 +61,5 @@ Write `00_selection.md` to the scratch directory with:
    - If no table qualifies, write `Selected tables: (none)` and say so plainly
      in your reply to the user — there is nothing to curate.
 
-The procedure.md procedure then runs stages 1–14 once per selected table, each in
+The SKILL.md procedure then runs stages 1–14 once per selected table, each in
 its own `table_<n>/` scratch sub-directory, and combines the results.

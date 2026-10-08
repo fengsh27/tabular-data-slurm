@@ -1,6 +1,6 @@
 # Stage 03 — Patient refine
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
 
 ## What you are doing
 Refine the patient table from stage 2 into

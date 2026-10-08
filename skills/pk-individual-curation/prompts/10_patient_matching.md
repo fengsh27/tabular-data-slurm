@@ -1,7 +1,7 @@
 # Stage 10 — Patient matching
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
-**Only run this prompt if the shortcut in procedure.md does not apply** (i.e. the
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
+**Only run this prompt if the shortcut in SKILL.md does not apply** (i.e. the
 refined patient table has more than one row). With a single cohort, assign it to
 every row directly without reasoning.
 
@@ -58,6 +58,6 @@ Then **write the result to `10_patient_matched.md`** in the scratch directory.
 Stage 12 (assembly) reads that file.
 
 ## Note on the shortcut
-If `03_patient_refined.md` has a **single** cohort, the procedure.md shortcut
+If `03_patient_refined.md` has a **single** cohort, the SKILL.md shortcut
 applies: attach that one cohort (with each row's own `Patient ID`) to every row
 without running this prompt.

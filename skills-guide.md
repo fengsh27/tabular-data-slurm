@@ -68,7 +68,12 @@ Full details, including the two environment variables that control where files a
    ollama/<version>` ([README.md](README.md) §1) or your own pinned container
    ([ollama-guide.md](ollama-guide.md) §1) — the skills don't care which, only that something is
    listening on a port and speaks Ollama's Anthropic-compatible endpoint. **Pick the model first**:
-   see [§6](#6-choosing-a-model) below before committing to one for a real run.
+   see [§5](#5-choosing-a-model) below before committing to one for a real run.
+
+   OSC's shared model folder doesn't have the models recommended here (qwen3.8, gemma4, ...),
+   so you need **your own model folder** with the model pulled into it once
+   ([README.md](README.md) §6). Every command below that starts a server sets `OLLAMA_MODELS`
+   (interactive) or `MY_OLLAMA_MODELS` (batch template) to that folder.
 
 3. **Clone or copy this repo's `skills/` into your project**, so `.claude/skills/` exists next to
    your paper files:
@@ -81,6 +86,33 @@ Full details, including the two environment variables that control where files a
    Claude Code auto-discovers skills from `.claude/skills/` in your current project — nothing
    else to register.
 
+4. **Install the skills' Python dependency.** The helper scripts need Python 3 plus one package,
+   `beautifulsoup4` (used to convert the paper's HTML/XML). Pick one way:
+
+   - **Conda environment (recommended)**, from `environment.yml` in this repo:
+
+     ```bash
+     module load miniconda3/24.1.2-py310
+     conda env create -f /path/to/tabular-data-slurm/environment.yml   # once; creates "pkpe-skills"
+     conda activate pkpe-skills          # if this complains, use: source activate pkpe-skills
+     python -c "import bs4; print('bs4 OK')"
+     ```
+
+     Activate it in every interactive session before running `claude`; the batch template does
+     it for you (`CONDA_ENV=pkpe-skills`, the default).
+   - **Or pip into your user Python**, with no environment to activate:
+
+     ```bash
+     pip install --user -r .claude/skills/pk-pe-prepare/scripts/requirements.txt
+     ```
+
+     Then set `CONDA_ENV=` (empty) in the batch template.
+
+5. **Name each paper file after its PMID** (e.g. `12345678.html` or `12345678.xml`). The prepare
+   step names its output folder after the file name (`.paper_assets/12345678/`), and the
+   curation step has to be given that same name. A file called `paper.html` would end up in
+   `.paper_assets/paper/`.
+
 ---
 
 ## 3. Try it interactively first
@@ -92,6 +124,9 @@ mistake cheaply, and lets you watch what each skill actually does.
 # 1. Get a GPU node and start Ollama (see README.md §3 for the full explanation)
 sinteractive -A PAS1234 -g 1 -c 8 -t 1:00:00
 module load ollama/0.32.0
+export OLLAMA_MODELS=/fs/ess/PAS1234/ollama/models     # your own folder (after module load)
+mkdir -p "$OLLAMA_MODELS"
+export APPTAINERENV_OLLAMA_CONTEXT_LENGTH=131072        # server context; must match step 2
 ollama_start > ~/ollama-server.log 2>&1
 echo $OLLAMA_PORT
 ollama_pull qwen3.8:27b         # first time only; later runs reuse the cached model
@@ -100,11 +135,11 @@ ollama_pull qwen3.8:27b         # first time only; later runs reuse the cached m
 export ANTHROPIC_BASE_URL="http://127.0.0.1:${OLLAMA_PORT}"
 export ANTHROPIC_API_KEY="ollama"              # any non-empty string — Ollama doesn't check it
 export ANTHROPIC_MODEL="qwen3.8:27b"
-export CLAUDE_CODE_MAX_CONTEXT_TOKENS=131072   # keep in lockstep with the server's context — see §6
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS=131072   # same number as step 1's context — see §5
 
 # 3. Prepare a paper, then curate it
 cd /path/to/your/project          # wherever .claude/skills/ lives
-claude -p "Use the pk-pe-prepare skill to prepare paper.html for curation, pmid 12345678."
+claude -p "Use the pk-pe-prepare skill to prepare 12345678.html for curation, pmid 12345678."
 claude -p "Use the pk-individual-curation skill to curate individual-subject PK data for paper 12345678."
 ```
 
@@ -120,15 +155,20 @@ which step it misunderstood — it's plain prose, not a black box.
 Once the interactive version works, `osc_skills_job_template.sh` runs the same thing unattended.
 It:
 
-1. starts the Ollama server (same pattern as `osc_tabular_job_template.sh`, but with its own
-   pinned container rather than OSC's module — see the note inside the script for why),
-2. prepares one paper,
-3. curates it with one named skill,
-4. records where the deliverable CSV landed.
+1. checks the paper file, `beautifulsoup4` and `claude` are all there, so a setup mistake fails
+   in seconds,
+2. starts the Ollama server from OSC's module (same pattern as `osc_tabular_job_template.sh`)
+   and checks that your model is in your models folder,
+3. prepares one paper,
+4. curates it with one named skill,
+5. records where the deliverable CSV landed.
+
+The PMID is taken from the paper's file name (`PAPER=12345678.html` → PMID `12345678`), so name
+your files that way.
 
 ```bash
 cp osc_skills_job_template.sh my_curation_job.sh
-nano my_curation_job.sh        # at minimum: --account, PAPER, PMID, SKILL
+nano my_curation_job.sh        # at minimum: --account, PAPER, SKILL, MY_OLLAMA_MODELS
 sbatch my_curation_job.sh
 squeue -u $USER
 cat skills-job-<jobid>.out
@@ -152,10 +192,14 @@ caveat. A few things specific to running skills (vs. a plain chat or a raw API c
   silently trigger context-shift truncation instead of a clean error. A reasonable starting point
   for these skills is `131072`–`196608`, depending on model and paper length; start smaller and
   raise it if a paper's conversation runs out of room.
-- **`qwen3.6` needs a pre-regression container** (`ollama-old.sif` in ollama-guide.md's own
-  example, or an older OSC module), because of a real, still-open upstream crash bug triggered
-  specifically by agentic tool-calling — which is exactly what running a skill through Claude Code
-  is. `qwen3.8` and `gemma4` don't have this problem.
+- **`qwen3.6` needs your own pre-regression container** (`ollama-old.sif` in ollama-guide.md's
+  own example), because of a real, still-open upstream crash bug triggered specifically by
+  agentic tool-calling — which is exactly what running a skill through Claude Code is. None of
+  OSC's modules works for it: `ollama/0.32.0` is past the regression, and the older ones
+  (0.13.1 and below) predate qwen3.6 and can't load it. To use qwen3.6 in a batch job, replace
+  the template's `module load` server block with the own-container pattern from ollama-guide.md
+  §3. `qwen3.8` doesn't have this problem; the original project ran `gemma4` on the old
+  container out of caution.
 - **Set `{"totalTokensReminder": "off"}` in Claude Code's settings before running a skill.**
   Without it, Claude Code re-injects a "N tokens left" reminder whose JSON shape changes on every
   call, which defeats Ollama's prompt-cache and makes every single turn of a multi-step skill
@@ -174,6 +218,9 @@ caveat. A few things specific to running skills (vs. a plain chat or a raw API c
 
 | Symptom | Likely cause and fix |
 |---|---|
+| `[ERROR] prepare did not produce .../.paper_assets/<pmid>` | The paper file isn't named `<pmid>.html`/`.xml`. Rename it; the PMID is taken from the file name. |
+| `[ERROR] Model ... is not in ...` | `MY_OLLAMA_MODELS` is empty (OSC's shared folder has no qwen3.8) or points at a folder you haven't pulled the model into. See §2 step 2. |
+| `[ERROR] Python package beautifulsoup4 is missing` / `[ERROR] Could not activate conda environment` | Do §2 step 4 (create the `pkpe-skills` environment, or pip-install and set `CONDA_ENV=` empty). |
 | Claude Code hangs or errors immediately | Check `ANTHROPIC_BASE_URL`/`ANTHROPIC_API_KEY`/`ANTHROPIC_MODEL` are exported, and that the Ollama server is actually up (`curl $ANTHROPIC_BASE_URL/api/tags`). |
 | A paper takes far longer than expected (many tens of minutes per paper) | Missing the `totalTokensReminder: off` setting (§5) — this is the single biggest time sink seen with this setup. |
 | `API Error: Claude's response exceeded the N output token maximum` | Raise `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, or the model got stuck in an unproductive "thinking" loop. A plain retry of just that paper often succeeds even with temperature 0 — this has been observed repeatedly and isn't fully understood, but it's cheap to try before investigating further. |

@@ -1,6 +1,6 @@
 # Stage 12 — Assembly
 
-This file is loaded by `procedure.md` as the assembly stage of the PK individual
+This file is loaded by `SKILL.md` as the assembly stage of the PK individual
 curation procedure (it is followed by stage 13 row cleanup and stage 14
 verification).
 

@@ -1,6 +1,6 @@
 # Stage 0c — Ensure a Patient ID (infer from full text if missing)
 
-This file is loaded by `procedure.md` as a **per-table preprocessing step**, run for
+This file is loaded by `SKILL.md` as a **per-table preprocessing step**, run for
 each selected table right after its `00_markdown_table.md` is written and before
 stage 1. It guarantees the table has a per-row **Patient ID** — because much
 individual PK data (especially single-patient case reports) keeps the subject

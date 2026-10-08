@@ -8,7 +8,7 @@ PK-summary schema.
 
 Run it **once per curated table**, in that table's `table_<n>/` sub-directory
 (every table — including the sole table of a single-table run — is nested; see
-"Always nest" in procedure.md). `<scratch>` below is that `table_<n>/` directory.
+"Always nest" in SKILL.md). `<scratch>` below is that `table_<n>/` directory.
 
 ## Parameters for the shared procedure
 - **`<FINAL_CSV>`** = `<scratch>/13_final.csv`

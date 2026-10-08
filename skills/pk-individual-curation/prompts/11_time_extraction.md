@@ -1,6 +1,6 @@
 # Stage 11 — Time extraction
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
 
 ## What you are doing
 For each row of each sub-table, add a `[Time value, Time unit]` pair: the

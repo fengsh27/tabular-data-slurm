@@ -1,0 +1,20 @@
+# Conda environment for the PK/PE curation skills in skills/.
+#
+# The skills' helper scripts (prepare_paper.py, html_to_markdown_table.py,
+# verify_provenance.py, clean_individual_rows.py) are Python 3 standard library
+# apart from beautifulsoup4, which they use with its built-in "html.parser".
+#
+# Create once (on OSC):
+#   module load miniconda3/24.1.2-py310
+#   conda env create -f environment.yml
+# Use:
+#   conda activate pkpe-skills      # or: source activate pkpe-skills
+#
+# Claude Code itself is not a Python package and is installed separately
+# (skills-guide.md section 2).
+name: pkpe-skills
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - beautifulsoup4>=4.12

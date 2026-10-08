@@ -1,6 +1,6 @@
 # Stage 02 — Patient / cohort extraction
 
-This file is loaded by `procedure.md` during the PK summary curation procedure.
+This file is loaded by `SKILL.md` during the PK summary curation procedure.
 
 ## What you are extracting
 The set of unique **[Population, Pregnancy stage, Subject N]** combinations

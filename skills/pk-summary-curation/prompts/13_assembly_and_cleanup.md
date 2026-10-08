@@ -1,6 +1,6 @@
 # Stage 13 — Assembly + row cleanup
 
-This file is loaded by `procedure.md` as the assembly stage of the PK summary
+This file is loaded by `SKILL.md` as the assembly stage of the PK summary
 curation procedure (it is followed by stage 14, verification + correction).
 
 ## What you are doing
@@ -67,4 +67,4 @@ Before finishing, sanity-check:
 - the `Main value` / `Statistics type` headers no longer appear (they were
   renamed).
 
-Then run the validation and verification passes described in `procedure.md`.
+Then run the validation and verification passes described in `SKILL.md`.

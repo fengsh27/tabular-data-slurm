@@ -1,6 +1,6 @@
 # Stage 05 — Parameter-type alignment
 
-This file is loaded by `procedure.md` during the PK individual curation procedure.
+This file is loaded by `SKILL.md` during the PK individual curation procedure.
 
 ## What you are doing
 Make sure the table is oriented so that **each row is one subject** and the PK
