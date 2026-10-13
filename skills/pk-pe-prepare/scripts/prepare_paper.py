@@ -381,6 +381,28 @@ def _html_block_to_md(root):
     return _collapse("\n\n".join(out))
 
 
+_YEAR_RE = re.compile(r"\b(1[89]\d\d|20\d\d)\b")
+
+
+def _html_find_year(soup):
+    """Publication year from the citation <meta> tags publishers add, else None."""
+    for name in ("citation_publication_date", "citation_date", "dc.date",
+                 "citation_online_date", "citation_year"):
+        meta = soup.find("meta", attrs={"name": re.compile("^" + re.escape(name) + "$", re.I)})
+        if meta is not None:
+            m = _YEAR_RE.search(meta.get("content") or "")
+            if m:
+                return m.group(1)
+    # publisher page elements, e.g. Wiley's <span class="epub-date">01 March 2021</span>
+    for cls in ("epub-date", "pub-date", "publication-date", "published-date"):
+        el = soup.find(class_=cls)
+        if el is not None:
+            m = _YEAR_RE.search(el.get_text(" "))
+            if m:
+                return m.group(1)
+    return None
+
+
 def parse_html(path):
     if BeautifulSoup is None:
         sys.exit("beautifulsoup4 is required for HTML input: pip install beautifulsoup4")
@@ -388,6 +410,7 @@ def parse_html(path):
         soup = BeautifulSoup(fh.read(), "html.parser")
 
     title = _html_find_title(soup)
+    year = _html_find_year(soup)
     abstract_el = _html_find_abstract(soup)
     body_el, body_src = _html_find_body(soup)
 
@@ -447,6 +470,7 @@ def parse_html(path):
 
     return {
         "title": title,
+        "year": year,
         "abstract_md": abstract_md,
         "body_md": body_md,
         "has_body": body_el is not None,
@@ -548,11 +572,25 @@ def _xml_table_html(table_wrap):
     return ET.tostring(clone, encoding="unicode")
 
 
+def _xml_find_year(root):
+    """Publication year from JATS <pub-date> (print/issue first, then any), else None."""
+    dates = root.findall(".//front//article-meta/pub-date")
+    def rank(d):
+        kind = (d.get("pub-type") or d.get("date-type") or "").lower()
+        return 0 if kind in ("ppub", "pub", "collection") else 1 if kind == "epub" else 2
+    for d in sorted(dates, key=rank):
+        m = _YEAR_RE.search(_xml_text(d.find("year")))
+        if m:
+            return m.group(1)
+    return None
+
+
 def parse_xml(path):
     root = ET.parse(path).getroot()
 
     title_el = root.find(".//front//article-title")
     title = _xml_text(title_el) or None
+    year = _xml_find_year(root)
 
     # JATS allows several <abstract>s; abstract-type="graphical"/"teaser" is the
     # XML spelling of the Highlights block that derails the HTML path, so prefer
@@ -610,6 +648,7 @@ def parse_xml(path):
 
     return {
         "title": title,
+        "year": year,
         "abstract_md": abstract_md,
         "body_md": body_md,
         "has_body": body_el is not None,
@@ -673,6 +712,7 @@ def write_outputs(parsed, pmid, out_root):
     manifest = {
         "pmid": pmid,
         "title": parsed["title"],
+        "year": parsed.get("year"),
         "n_tables": len(parsed["tables"]),
         "has_abstract": bool(parsed["abstract_md"]),
         "has_body": parsed["has_body"],

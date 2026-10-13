@@ -1,8 +1,8 @@
 # Conda environment for the PK/PE curation skills in skills/.
 #
-# The skills' helper scripts (prepare_paper.py, html_to_markdown_table.py,
-# verify_provenance.py, clean_individual_rows.py) are Python 3 standard library
-# apart from beautifulsoup4, which they use with its built-in "html.parser".
+# The skills' helper scripts are Python 3 standard library apart from
+# beautifulsoup4 (paper/table conversion, with its built-in "html.parser") and
+# openpyxl (only for pe-info-outcome-curation's optional Excel export).
 #
 # Create once (on OSC):
 #   module load miniconda3/24.1.2-py310
@@ -18,3 +18,4 @@ channels:
 dependencies:
   - python=3.11
   - beautifulsoup4>=4.12
+  - openpyxl>=3.1

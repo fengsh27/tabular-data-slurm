@@ -41,8 +41,7 @@ set -u
 PAPER=${PAPER:-12345678.html}                   # the raw paper file (.html or .xml), named <pmid>.html/.xml
 PMID=$(basename "${PAPER%.*}")                  # derived from the file name; don't set it separately
 SKILL=${SKILL:-pk-individual-curation}           # which curation skill to run (see skills-guide.md §1)
-MODEL=${MODEL:-qwen3.8:27b}                     # must NOT be qwen3.6 unless you switch to a
-                                                 # pre-regression container (see ollama-guide.md §6)
+MODEL=${MODEL:-qwen3.8:27b}                     # see OLLAMA_SIF below: qwen3.8 needs your own container
 CONTEXT_LENGTH=${CONTEXT_LENGTH:-131072}         # keep CLAUDE_CODE_MAX_CONTEXT_TOKENS equal to this
 MAX_OUTPUT_TOKENS=${MAX_OUTPUT_TOKENS:-32000}
 
@@ -50,6 +49,13 @@ MAX_OUTPUT_TOKENS=${MAX_OUTPUT_TOKENS:-32000}
 # have qwen3.8 or the other models recommended for these skills, so point this at
 # your own folder and pull the model into it once first (README.md section 6):
 MY_OLLAMA_MODELS=${MY_OLLAMA_MODELS:-}          # e.g. /fs/ess/PAS1234/ollama/models
+
+# Which Ollama runs the model. Empty = OSC's module (ollama/0.32.0). A path = your
+# own Apptainer image (ollama-guide.md §1), needed when the module can't run the
+# model:
+#   - qwen3.8 needs Ollama newer than 0.32.0 (the module fails: "unknown renderer");
+#   - qwen3.6 under tool-calling needs a pre-2026-04 image (ollama-guide.md §6).
+OLLAMA_SIF=${OLLAMA_SIF:-}                      # e.g. /fs/ess/PAS1234/ollama/ollama.sif
 
 # Python environment for the skills' helper scripts, created once from this
 # repo's environment.yml (skills-guide.md section 2). Set to empty if you
@@ -87,22 +93,42 @@ SKILL_OUTPUT_FOLDER=${SKILL_OUTPUT_FOLDER:-$PWD/skill_output}
 export SKILL_SCRATCH_FOLDER SKILL_OUTPUT_FOLDER
 mkdir -p "$SKILL_SCRATCH_FOLDER" "$SKILL_OUTPUT_FOLDER"
 
-# === 2. Load OSC's Ollama module and start the server ========================
-# Same bootstrap as osc_tabular_job_template.sh — see README.md §4 for a line-by-
-# line explanation. If you need qwen3.6 specifically, switch this section to your
-# own pinned pre-regression container per ollama-guide.md §1/§6 instead of OSC's
-# module, which is past the regression window.
-module load ollama/0.32.0
-if [ -n "$MY_OLLAMA_MODELS" ]; then
-    export OLLAMA_MODELS="$MY_OLLAMA_MODELS"     # must come AFTER module load
-fi
-export APPTAINERENV_OLLAMA_CONTEXT_LENGTH=$CONTEXT_LENGTH
-echo "[INFO] Node: $(hostname)   Models folder: $OLLAMA_MODELS   Model: $MODEL"
-
+# === 2. Start the Ollama server ===============================================
+# Either OSC's module (same bootstrap as osc_tabular_job_template.sh, explained in
+# README.md §4) or your own container (pattern from ollama-guide.md §3).
 SERVER_LOG=ollama-server-${SLURM_JOB_ID}.log
-source ollama_start_helper > "$SERVER_LOG" 2>&1
+if [ -z "$OLLAMA_SIF" ]; then
+    module load ollama/0.32.0
+    if [ -n "$MY_OLLAMA_MODELS" ]; then
+        export OLLAMA_MODELS="$MY_OLLAMA_MODELS"     # must come AFTER module load
+    fi
+    export APPTAINERENV_OLLAMA_CONTEXT_LENGTH=$CONTEXT_LENGTH
+    echo "[INFO] Node: $(hostname)   Ollama: OSC module   Models: $OLLAMA_MODELS   Model: $MODEL"
+    source ollama_start_helper > "$SERVER_LOG" 2>&1
+    trap 'module unload ollama' EXIT
+else
+    if [ ! -f "$OLLAMA_SIF" ]; then
+        echo "[ERROR] OLLAMA_SIF not found: $OLLAMA_SIF"; exit 1
+    fi
+    if [ -z "$MY_OLLAMA_MODELS" ]; then
+        echo "[ERROR] With OLLAMA_SIF, also set MY_OLLAMA_MODELS (your models folder)."; exit 1
+    fi
+    export OLLAMA_MODELS="$MY_OLLAMA_MODELS"
+    # Unique port: fold the job id into a range, step past any port in use
+    OLLAMA_PORT=$(( 20000 + ${SLURM_JOB_ID:-$$} % 20000 ))
+    while ss -tln 2>/dev/null | grep -q ":${OLLAMA_PORT} "; do
+        OLLAMA_PORT=$(( OLLAMA_PORT + 1 ))
+    done
+    echo "[INFO] Node: $(hostname)   Ollama: $OLLAMA_SIF   Models: $OLLAMA_MODELS   Model: $MODEL"
+    apptainer exec --nv \
+        --env OLLAMA_MODELS="$OLLAMA_MODELS" \
+        --env OLLAMA_HOST="127.0.0.1:${OLLAMA_PORT}" \
+        --env OLLAMA_CONTEXT_LENGTH="$CONTEXT_LENGTH" \
+        "$OLLAMA_SIF" ollama serve > "$SERVER_LOG" 2>&1 &
+    OLLAMA_PID=$!
+    trap 'kill "$OLLAMA_PID" 2>/dev/null; wait "$OLLAMA_PID" 2>/dev/null' EXIT
+fi
 BASE_URL="http://127.0.0.1:${OLLAMA_PORT}"
-trap 'module unload ollama' EXIT
 
 for i in {1..60}; do
     sleep 5
@@ -115,13 +141,19 @@ done
 curl -sf "$BASE_URL/api/tags" > /dev/null || { echo "[ERROR] Server never became ready. See $SERVER_LOG"; exit 1; }
 echo "[INFO] Ollama is ready at $BASE_URL"
 
-# Is the model actually in this models folder? (A missing model would otherwise
-# only surface as a confusing Claude Code error later.)
-if ! curl -s "$BASE_URL/api/tags" | python3 -c "import json,sys; names=[m['name'] for m in json.load(sys.stdin)['models']]; sys.exit(0 if '$MODEL' in names else 1)"; then
-    echo "[ERROR] Model $MODEL is not in $OLLAMA_MODELS."
-    echo "        Set MY_OLLAMA_MODELS to the folder you pulled it into (README.md section 6)."
+# Can this server actually run the model? One tiny request (it also loads the
+# model onto the GPU, which the first real request would do anyway). Catches a
+# model missing from the folder, or one this Ollama version can't run, in seconds.
+echo "[INFO] Loading $MODEL with a test request..."
+TEST_REPLY=$(curl -s --max-time 900 "$BASE_URL/api/generate" \
+    -d "{\"model\": \"$MODEL\", \"prompt\": \"Say OK.\", \"stream\": false, \"options\": {\"num_predict\": 5}}")
+if ! printf '%s' "$TEST_REPLY" | python3 -c "import json,sys; r=json.load(sys.stdin); sys.exit(0 if 'response' in r and 'error' not in r else 1)" 2>/dev/null; then
+    echo "[ERROR] Test request to $MODEL failed: ${TEST_REPLY:-no reply}"
+    echo "        'not found'        -> the model isn't in $OLLAMA_MODELS (set MY_OLLAMA_MODELS, README.md §6)"
+    echo "        'unknown renderer' -> this Ollama is too old for the model (set OLLAMA_SIF, see above)"
     exit 1
 fi
+echo "[INFO] $MODEL answered the test request"
 
 # === 3. Point Claude Code at this server ======================================
 export ANTHROPIC_BASE_URL="$BASE_URL"

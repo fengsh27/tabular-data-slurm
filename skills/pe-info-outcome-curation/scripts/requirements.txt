@@ -1,0 +1,7 @@
+# Dependencies for the pe-info-outcome-curation skill scripts.
+# Install with:  pip install -r scripts/requirements.txt
+# (or use the repo's environment.yml, which includes both)
+#
+# Every script except the two below is Python 3 standard library only.
+beautifulsoup4>=4.12   # html_to_markdown_table.py — only for raw pasted HTML tables
+openpyxl>=3.1          # to_xlsx.py — only for the optional Excel export
